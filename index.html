@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walpole, NH News Aggregator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .date-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .date-controls label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .date-controls input, .date-controls select {
+            padding: 10px;
+            border: 2px solid #e3e3e3;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .date-controls input:focus, .date-controls select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .status.loading { background: linear-gradient(45deg, #ffecd2, #fcb69f); }
+        .status.success { background: linear-gradient(45deg, #a8edea, #fed6e3); }
+        .status.error { background: linear-gradient(45deg, #ff9a9e, #fecfef); }
+
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .results {
+                grid-template-columns: 1fr;
+            }
+            .date-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .article {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .article:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .article h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .article a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .article a:hover {
+            text-decoration: underline;
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .source-tag {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .article-description {
+            color: #555;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        .feed-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(240, 240, 240, 0.8);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .feed-status h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .feed-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .feed-item {
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .feed-success { background: #d4edda; color: #155724; }
+        .feed-error { background: #f8d7da; color: #721c24; }
+
+        .empty-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px 20px;
+            background: rgba(240, 240, 240, 0.5);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Walpole, NH News Aggregator</h1>
+            <p>Stay informed about local news and mentions of Walpole, New Hampshire</p>
+        </div>
+
+        <div class="controls">
+            <div class="date-controls">
+                <label for="timeRange">Time Range:</label>
+                <select id="timeRange">
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="week">Past Week</option>
+                    <option value="month">Past Month</option>
+                    <option value="custom">Custom Range</option>
+                </select>
+
+                <div id="customRange" style="display: none;">
+                    <label for="startDate">From:</label>
+                    <input type="date" id="startDate">
+                    <label for="endDate">To:</label>
+                    <input type="date" id="endDate">
+                </div>
+
+                <button class="btn" onclick="fetchNews()" id="fetchBtn">Fetch News</button>
+            </div>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+
+        <div class="results">
+            <div class="section">
+                <h2>News Stories <span id="newsCount">(0)</span></h2>
+                <div id="newsResults"></div>
+            </div>
+
+            <div class="section">
+                <h2>Mentions <span id="mentionsCount">(0)</span></h2>
+                <div id="mentionsResults"></div>
+            </div>
+        </div>
+
+        <div class="feed-status">
+            <h4>RSS Feed Sources</h4>
+            <div class="feed-list" id="feedStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // RSS Feed sources organized by type
+        const RSS_FEEDS = {
+            local: [
+                { name: 'Keene Sentinel', url: 'https://www.sentinelsource.com/rss.xml' },
+                { name: 'Valley News', url: 'https://www.vnews.com/rss.xml' },
+                { name: 'Monadnock Ledger-Transcript', url: 'https://www.ledgertranscript.com/rss.xml' }
+            ],
+            state: [
+                { name: 'New Hampshire Union Leader', url: 'https://www.unionleader.com/rss.xml' },
+                { name: 'Concord Monitor', url: 'https://www.concordmonitor.com/rss.xml' },
+                { name: 'NH Public Radio', url: 'https://www.nhpr.org/rss.xml' },
+                { name: 'InDepthNH', url: 'https://indepthnh.org/feed/' }
+            ],
+            national: [
+                { name: 'Associated Press', url: 'https://feeds.apnews.com/rss/apf-usnews' },
+                { name: 'Reuters US News', url: 'https://feeds.reuters.com/reuters/USdomesticNews' },
+                { name: 'NPR News', url: 'https://feeds.npr.org/1001/rss.xml' }
+            ]
+        };
+
+        let allFeeds = [];
+        let fetchedArticles = [];
+        let feedStatuses = {};
+
+        // Initialize feeds array
+        Object.values(RSS_FEEDS).forEach(categoryFeeds => {
+            allFeeds.push(...categoryFeeds);
+        });
+
+        // Set default date to today
+        document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+
+        // Handle time range selection
+        document.getElementById('timeRange').addEventListener('change', function() {
+            const customRange = document.getElementById('customRange');
+            const endDate = document.getElementById('endDate');
+            const startDate = document.getElementById('startDate');
+            
+            if (this.value === 'custom') {
+                customRange.style.display = 'block';
+            } else {
+                customRange.style.display = 'none';
+                const today = new Date();
+                endDate.value = today.toISOString().split('T')[0];
+                
+                switch(this.value) {
+                    case 'today':
+                        startDate.value = today.toISOString().split('T')[0];
+                        break;
+                    case 'yesterday':
+                        const yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        startDate.value = yesterday.toISOString().split('T')[0];
+                        endDate.value = yesterday.toISOString().split('T')[0];
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(today);
+                        weekAgo.setDate(weekAgo.getDate() - 7);
+                        startDate.value = weekAgo.toISOString().split('T')[0];
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(today);
+                        monthAgo.setMonth(monthAgo.getMonth() - 1);
+                        startDate.value = monthAgo.toISOString().split('T')[0];
+                        break;
+                }
+            }
+        });
+
+        // CORS Proxy function (in production, you'd use a proper backend)
+        function getCORSProxy(url) {
+            return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        }
+
+        // Parse RSS XML
+        function parseRSS(xmlText, sourceName) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                
+                const items = xmlDoc.querySelectorAll('item');
+                const articles = [];
+                
+                items.forEach(item => {
+                    const title = item.querySelector('title')?.textContent || '';
+                    const description = item.querySelector('description')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    
+                    if (title && link) {
+                        articles.push({
+                            title: title.trim(),
+                            description: description.trim(),
+                            link: link.trim(),
+                            pubDate: pubDate ? new Date(pubDate) : new Date(),
+                            source: sourceName
+                        });
+                    }
+                });
+                
+                return articles;
+            } catch (error) {
+                console.error('Error parsing RSS:', error);
+                return [];
+            }
+        }
+
+        // Check if article is related to Walpole
+        function isWalpoleRelated(article) {
+            const searchText = (article.title + ' ' + article.description).toLowerCase();
+            const walpoleTerms = [
+                'walpole',
+                'walpole nh',
+                'walpole new hampshire',
+                'walpole, nh',
+                'walpole, new hampshire'
+            ];
+            
+            return walpoleTerms.some(term => searchText.includes(term));
+        }
+
+        // Categorize articles as news vs mentions
+        function categorizeArticle(article) {
+            const title = article.title.toLowerCase();
+            const description = article.description.toLowerCase();
+            
+            // News indicators
+            const newsTerms = [
+                'breaking', 'announced', 'council', 'meeting', 'election',
+                'school', 'budget', 'town', 'selectmen', 'police',
+                'fire', 'construction', 'development', 'project'
+            ];
+            
+            // Check if it's prominently about Walpole (news)
+            const titleHasWalpole = title.includes('walpole');
+            const hasNewsTerms = newsTerms.some(term => 
+                title.includes(term) || description.includes(term)
+            );
+            
+            return (titleHasWalpole && hasNewsTerms) ? 'news' : 'mentions';
+        }
+
+        // Filter articles by date range
+        function filterByDateRange(articles, startDate, endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999); // Include full end date
+            
+            return articles.filter(article => {
+                const articleDate = new Date(article.pubDate);
+                return articleDate >= start && articleDate <= end;
+            });
+        }
+
+        // Fetch news from all RSS feeds
+        async function fetchNews() {
+            const statusDiv = document.getElementById('status');
+            const fetchBtn = document.getElementById('fetchBtn');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status loading';
+            statusDiv.textContent = 'Fetching news from RSS feeds...';
+            fetchBtn.disabled = true;
+            
+            fetchedArticles = [];
+            feedStatuses = {};
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // Fetch from all feeds
+            const fetchPromises = allFeeds.map(async (feed) => {
+                try {
+                    const response = await fetch(getCORSProxy(feed.url));
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const xmlText = await response.text();
+                    const articles = parseRSS(xmlText, feed.name);
+                    
+                    // Filter for Walpole-related content
+                    const walpoleArticles = articles.filter(isWalpoleRelated);
+                    
+                    // Filter by date range
+                    const dateFiltered = filterByDateRange(walpoleArticles, startDate, endDate);
+                    
+                    fetchedArticles.push(...dateFiltered);
+                    feedStatuses[feed.name] = { 
+                        success: true, 
+                        count: dateFiltered.length,
+                        total: articles.length
+                    };
+                } catch (error) {
+                    console.error(`Error fetching ${feed.name}:`, error);
+                    feedStatuses[feed.name] = { 
+                        success: false, 
+                        error: error.message 
+                    };
+                }
+            });
+            
+            await Promise.all(fetchPromises);
+            
+            // Sort articles by date (newest first)
+            fetchedArticles.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+            
+            // Display results
+            displayResults();
+            updateFeedStatus();
+            
+            statusDiv.className = 'status success';
+            statusDiv.textContent = `Found ${fetchedArticles.length} Walpole-related articles`;
+            fetchBtn.disabled = false;
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Display categorized results
+        function displayResults() {
+            const newsResults = document.getElementById('newsResults');
+            const mentionsResults = document.getElementById('mentionsResults');
+            const newsCount = document.getElementById('newsCount');
+            const mentionsCount = document.getElementById('mentionsCount');
+            
+            const newsArticles = [];
+            const mentionArticles = [];
+            
+            fetchedArticles.forEach(article => {
+                if (categorizeArticle(article) === 'news') {
+                    newsArticles.push(article);
+                } else {
+                    mentionArticles.push(article);
+                }
+            });
+            
+            // Update counts
+            newsCount.textContent = `(${newsArticles.length})`;
+            mentionsCount.textContent = `(${mentionArticles.length})`;
+            
+            // Display news articles
+            if (newsArticles.length > 0) {
+                newsResults.innerHTML = newsArticles.map(article => createArticleHTML(article)).join('');
+            } else {
+                newsResults.innerHTML = '<div class="empty-message">No news stories found for the selected time period.</div>';
+            }
+            
+            // Display mentions
+            if (mentionArticles.length > 0) {
+                mentionsResults.innerHTML = mentionArticles.map(article => createArticleHTML(article)).join('');
+            } else {
+                mentionsResults.innerHTML = '<div class="empty-message">No mentions found for the selected time period.</div>';
+            }
+        }
+
+        // Create HTML for an article
+        function createArticleHTML(article) {
+            const formattedDate = article.pubDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return `
+                <div class="article">
+                    <div class="article-meta">
+                        <span class="source-tag">${article.source}</span>
+                        <span>${formattedDate}</span>
+                    </div>
+                    <h3><a href="${article.link}" target="_blank">${article.title}</a></h3>
+                    ${article.description ? `<div class="article-description">${article.description}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Update feed status display
+        function updateFeedStatus() {
+            const feedStatusDiv = document.getElementById('feedStatus');
+            
+            const statusHTML = allFeeds.map(feed => {
+                const status = feedStatuses[feed.name];
+                if (status) {
+                    if (status.success) {
+                        return `<div class="feed-item feed-success">${feed.name}: ${status.count}/${status.total} articles</div>`;
+                    } else {
+                        return `<div class="feed-item feed-error">${feed.name}: Error - ${status.error}</div>`;
+                    }
+                } else {
+                    return `<div class="feed-item feed-error">${feed.name}: Not checked</div>`;
+                }
+            }).join('');
+            
+            feedStatusDiv.innerHTML = statusHTML;
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-fetch today's news on load
+            fetchNews();
+        });
+    </script>
+</body>
+</html>
